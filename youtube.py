@@ -37,8 +37,6 @@ def fetchData(db_name):
                             LIMIT 5""").fetchall()
     artists = [x[0] for x in artists] # list of artist names
 
-    print(artists)
-
     # API information
     api_service_name = "youtube"
     api_version = "v3"
@@ -63,10 +61,6 @@ def fetchData(db_name):
 
         # for each of the videos returned, get stats (e.g. views, likes, and comments counts)
         for video in search_resp['items']:
-            # if video result does not actually belong to artist, skip
-            if artist not in video['snippet']['title']:
-                continue
-
             video_req = youtube.videos().list(
                 part="id,snippet,statistics",
                 id=video['id']['videoId'],
@@ -74,7 +68,7 @@ def fetchData(db_name):
             )
 
             video_resp = video_req.execute()
-            print(video_resp)
+            # print(video_resp)
             
             target = video_resp['items'][0]
             # insert video into db
@@ -122,11 +116,7 @@ def calculate_average_likes(db_name):
 
     return avg_likes
 
-def write_avgs(filename):
-    pass
-
 def scatterplot(db_name, file):
-
     # connect to database
     conn, cur = database(db_name)
 
@@ -151,18 +141,61 @@ def scatterplot(db_name, file):
     fig, ax = plt.subplots()
     ax.scatter(followers, avg_views, alpha=0.8, edgecolors='none', s=30)
     ax.ticklabel_format(useOffset=False, style='plain')
-    plt.title('Hello')
+    plt.title('Average views on top music videos vs number of Spotify followers')
     ax.set_ylabel('Average number of views')
     ax.set_xlabel('Number of followers on Spotify')
     plt.tight_layout()
     plt.savefig("followersviews.png")
+
+def barchart(db_name, file):
+    # connect to database
+    conn, cur = database(db_name)
+
+    results = cur.execute("""SELECT a.genre1, m.views FROM 
+                            (SELECT artist, views as views FROM musicvideos GROUP BY artist ) as m 
+                            JOIN artistinfo AS a 
+                            ON a.artist = m.artist""").fetchall()
+    
+    genres = {}
+    for row in results:
+        if not row[0]:
+            continue
+        if row[0] in genres:
+            genres[row[0]].append(row[1])
+        else:
+            genres[row[0]] = [row[1]]
+
+    dir = os.path.dirname(file)
+    outfile = open(os.path.join(dir, file), "w")
+    writer = csv.writer(outfile, delimiter=",")
+    writer.writerow(('genre', 'average views'))
+    # genre_names = []
+    # avg_views = []
+    for genre in genres:
+        genres[genre] = float(sum(genres[genre]) / len(genres[genre]))
+        writer.writerow((genre, genres[genre]))
+        # genre_names.append(genre)
+        # avg_views.append(genres[genre])
+    outfile.close()
+    
+    color = ["#003f5c", "#58508d", "#bc5090", "#ff6361", "#ffa600"]
+    fig, ax = plt.subplots()
+    plt.barh(list(genres.keys()), list(genres.values()), color=color)
+    # plt.bar(genre_names, avg_views)
+    plt.yticks(fontsize=5)
+    plt.xticks(fontsize=10,rotation=-45)
+    ax.get_xaxis().get_major_formatter().set_scientific(False)
+    plt.suptitle("Average Music Videos Views Per Genre")
+    plt.ylabel("Genres")
+    plt.xlabel("Average Music Video Views")
+    plt.tight_layout()
+    plt.savefig("viewsbygenre.png")
         
 
 def main():
     # fetchData("songstats.db")
-    # avg_views = calculate_average_views("songstats.db")
-    # avg_likes = calculate_average_likes("songstats.db")
     scatterplot("songstats.db", "followersvsviews.csv")
+    barchart("songstats.db", "viewsbygenre.csv")
 
 if __name__ == '__main__':
     main()
