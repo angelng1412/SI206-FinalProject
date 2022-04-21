@@ -12,6 +12,26 @@ sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
 
 class Spotify:
+    def get_data(self, uniqname_dictionary, username_dictionary):
+        fname = input("Enter .csv filename: ")
+        try:
+            fhand = pd.read_csv("./google_forms/" + fname)
+
+        except:
+            print("Cannot open file.")
+            exit()
+
+        for i in range(len(fhand)):
+            uniqname_dictionary[fhand["Username of Playlist Creator"][i]] = fhand["Uniqname"][i]
+
+            # splits the playlist link into a useable id
+            a = fhand["Spotify Playlist Link"][i].split("playlist/")
+            playlistid = a[1]
+
+            # inserts id to dictionary of spotify usernames
+            username_dictionary[fhand["Username of Playlist Creator"][i]] = playlistid
+
+
     def call_playlist(self, username, playlist_id):
             # this is what each track holds
             playlist_features_list = ["popularity_index", "album_release_date", "artist", "album","track_name",  "track_id", "danceability",
@@ -59,3 +79,23 @@ class Spotify:
                 playlist_df = pd.concat([playlist_df, track_df], ignore_index = True)
 
             return playlist_df
+
+
+def main():
+    a = Spotify()
+    uniqname_dictionary = dict()
+    username_dictionary = dict()
+
+    a.get_data(uniqname_dictionary, username_dictionary)
+
+    # function for reading through all individual playlists
+    for i in range(len(username_dictionary)):
+        # get key and playlist id from list
+        key = list(username_dictionary.keys())[i]
+        id = list(username_dictionary.values())[i]
+
+        # exports tracks to .csv file w/ uniqname as filename
+        folder_to_export_path = "./individual_csv/"
+        a.call_playlist(key, id).to_csv(folder_to_export_path+ uniqname_dictionary.get(key)+".csv", encoding = "utf-8-sig")
+
+main()
