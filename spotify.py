@@ -3,9 +3,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 from bs4 import BeautifulSoup
 import urllib.request as urllib
-import csv
-import sqlite3
-import os
+import csv, sqlite3, os
 
 
 client_id = input("what's your client id?: ")
@@ -86,6 +84,9 @@ def main():
     playlist_dictionary = dict()
 
     a.get_data(playlist_dictionary)
+    
+    # count variable
+    count = 0
 
     # function for reading through all individual playlists
     for i in range(len(playlist_dictionary)):
@@ -94,6 +95,10 @@ def main():
         id = list(playlist_dictionary.values())[i]
 
         a.playlist_sql("songstats.db", key, id)
+
+        # keep track of executions
+        count += 1
+        print("Executed " + str(count) + " time(s)")
 
 
 main()
