@@ -115,12 +115,6 @@ class Spotify:
         conn.commit()
 
 
-    def data_processing(self, db_name):
-        path = os.path.dirname(os.path.abspath(__file__))
-        conn = sqlite3.connect(path+'/'+db_name)
-        cur = conn.cursor()
-
-
 
 def join_sql(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
