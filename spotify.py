@@ -4,6 +4,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import urllib.request as urllib
 import csv, sqlite3, os
+import matplotlib.pyplot as plt
 
 class Spotify:
     def get_data(self, fhand, playlist_dictionary):
@@ -139,15 +140,121 @@ def join_sql(db_name):
     res = cur.fetchall()
     conn.commit()
 
-    for data in res:
-        print(data)
+    # create dictionary for followers, danceability, energy, tempo
+    follower_dict = dict()
+    danceability_dict = dict()
+    energy_dict = dict()
+    tempo_dict = dict()
+
+    # open a text file and write the calculations
+    with open("Average_artist_followers_by_genre.txt", 'w') as f:
+        with open("Average_genre_danceability.txt", 'w') as g:
+            with open("Average_genre_energy.txt", 'w') as h:
+                with open("Average_genre_tempo.txt", 'w') as i:
+                    # write the header first:
+                    f.write("Genre, Average Artist Followers")
+                    f.write('\n')
+
+                    g.write("Genre, Average Danceability")
+                    g.write('\n')
+
+                    h.write("Genre, Average Energy")
+                    h.write('\n')
+
+                    i.write("Genre, Average Tempo")
+                    i.write('\n')
 
 
+                    # go through each row
+                    for data in res:
+                        # write to text file
+                        f.write(str(data[0]) + ", " + str(data[1]))
+                        f.write('\n')
+
+                        g.write(str(data[0]) + ", " + str(data[2]))
+                        g.write('\n')
+
+                        h.write(str(data[0]) + ", " + str(data[3]))
+                        h.write('\n')
+
+                        i.write(str(data[0]) + ", " + str(data[4]))
+                        i.write('\n')
+
+                        # store in dictionaries
+                        follower_dict[data[0]] = data[1]
+                        danceability_dict[data[0]] = data[2]
+                        energy_dict[data[0]] = data[3]
+                        tempo_dict[data[0]] = data[4]
+
+                    # close files
+                    i.close()
+                h.close()
+            g.close()
+        f.close()
+
+    visualization(follower_dict, danceability_dict, energy_dict, tempo_dict)
 
 
+def visualization(follower_dict, danceability_dict, energy_dict, tempo_dict):
+    # get data
+    fnames = list(follower_dict.keys())
+    fvalues = list(follower_dict.values())
 
+    dnames = list(danceability_dict.keys())
+    dvalues = list(danceability_dict.values())
 
+    enames = list(energy_dict.keys())
+    evalues = list(energy_dict.values())
 
+    tnames = list(tempo_dict.keys())
+    tvalues = list(tempo_dict.values())
+
+    # format: range(len(dict)), values, names
+    color = ["#003f5c", "#58508d", "#bc5090", "#ff6361", "#ffa600"]
+
+    # follower data
+    plt.barh(range(len(follower_dict)), fvalues, tick_label=fnames, color=color)
+    plt.yticks(fontsize=5)
+    plt.suptitle("Average Follower Count Per Top Genre")
+    plt.xlabel("Average Follower Count")
+    plt.ylabel("Genre from the Top Songs")
+    plt.tight_layout()
+    plt.savefig("follower_data.png")
+
+    plt.clf()
+
+    # danceability data
+    plt.barh(range(len(danceability_dict)), dvalues, tick_label=dnames, color=color)
+    plt.yticks(fontsize=5)
+    plt.suptitle("Average Danceability of Each Top Genre")
+    plt.xlabel("Average Danceability")
+    plt.ylabel("Genre from the Top Songs")
+    plt.tight_layout()
+    plt.savefig("danceability_data.png")
+
+    plt.clf()
+
+    # energy data
+    plt.barh(range(len(energy_dict)), evalues, tick_label=enames, color=color)
+    plt.yticks(fontsize=5)
+    plt.suptitle("Average Energy of Each Top Genre")
+    plt.xlabel("Average Energy")
+    plt.ylabel("Genre from the Top Songs")
+    plt.tight_layout()
+    plt.savefig("energy_data.png")
+
+    plt.clf()
+
+    # energy data
+    plt.barh(range(len(tempo_dict)), tvalues, tick_label=tnames, color=color)
+    plt.yticks(fontsize=5)
+    plt.suptitle("Average Tempo of Each Top Genre")
+    plt.xlabel("Average Tempo")
+    plt.ylabel("Genre from the Top Songs")
+    plt.tight_layout()
+    plt.savefig("tempo_data.png")
+
+    plt.clf()
 
 
 
